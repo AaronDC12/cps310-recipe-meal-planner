@@ -1,8 +1,18 @@
-"""Tests for the starter Recipe & Meal Planner."""
+
+"""Tests for the Recipe & Meal Planner."""
 
 import json
 
-from recipe_utils import filter_by_category, load_config, load_recipes, search_by_name
+from recipe_utils import (
+    filter_by_category,
+    filter_favorites,
+    load_config,
+    load_favorites,
+    load_recipes,
+    save_favorites,
+    search_by_name,
+    toggle_favorite,
+)
 
 
 def test_search_by_name_finds_partial_match():
@@ -79,3 +89,48 @@ def test_load_recipes_reads_json(tmp_path):
     ]
     recipe_file.write_text(json.dumps(sample), encoding="utf-8")
     assert load_recipes(recipe_file) == sample
+
+
+def test_load_favorites_returns_empty_list_when_file_missing(tmp_path):
+    favorites_file = tmp_path / "favorites.json"
+    assert load_favorites(favorites_file) == []
+
+
+def test_save_and_load_favorites(tmp_path):
+    favorites_file = tmp_path / "favorites.json"
+    favorites = ["Chicken Alfredo", "Berry Smoothie"]
+
+    save_favorites(favorites, favorites_file)
+
+    assert load_favorites(favorites_file) == favorites
+
+
+def test_toggle_favorite_adds_recipe():
+    favorites = ["Chicken Alfredo"]
+
+    result = toggle_favorite(favorites, "Berry Smoothie")
+
+    assert result == ["Chicken Alfredo", "Berry Smoothie"]
+
+
+def test_toggle_favorite_removes_recipe():
+    favorites = ["Chicken Alfredo", "Berry Smoothie"]
+
+    result = toggle_favorite(favorites, "Chicken Alfredo")
+
+    assert result == ["Berry Smoothie"]
+
+
+def test_filter_favorites_returns_only_favorite_recipes():
+    recipes = [
+        {"name": "Chicken Alfredo", "category": "Dinner"},
+        {"name": "Berry Smoothie", "category": "Snack"},
+        {"name": "Tomato Pasta", "category": "Dinner"},
+    ]
+
+    result = filter_favorites(recipes, ["Berry Smoothie", "Tomato Pasta"])
+
+    assert result == [
+        {"name": "Berry Smoothie", "category": "Snack"},
+        {"name": "Tomato Pasta", "category": "Dinner"},
+    ]
